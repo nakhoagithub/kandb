@@ -14,25 +14,25 @@ CollectionType = Dict[
     ]
 ]
 
-SimpleTypeGroup = Union[int, str, bool]
+# SimpleTypeGroup = Union[int, str, bool]
 
-SingleDataType = Dict[
-    str, Union[
-        int,
-        str,
-        bool,
-        List[SimpleTypeGroup]
-    ]
-]
+# SingleDataType = Dict[
+#     str, Union[
+#         int,
+#         str,
+#         bool,
+#         List[SimpleTypeGroup]
+#     ]
+# ]
 
-QueryType = Callable[[Dict[str, Any]], bool]
+# QueryType = Callable[[Dict[str, Any]], bool]
 
-IdGeneratorType = Callable[[], str]
+# IdGeneratorType = Callable[[], str]
 
-ReturnWithIdType = Dict[
-    str, Dict[
-        str, SimpleTypeGroup
-    ]
-]
+# ReturnWithIdType = Dict[
+#     str, Dict[
+#         str, SimpleTypeGroup
+#     ]
+# ]
 
-NewKeyValidTypes = Union[List, Dict, str, int, bool]
+# NewKeyValidTypes = Union[List, Dict, str, int, bool]

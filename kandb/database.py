@@ -5,11 +5,15 @@ from copy import deepcopy
 from .storage import JsonStorage
 import os
 
+database = None
+
 
 class KanDB():
-    def __init__(self, folder="./__db", indent: int = 2) -> None:
+
+    def __init__(self, folder="./__db", indent: int = 2, auto_save=True) -> None:
         self.folder = folder
         self.indent = indent
+        self.auto_save = auto_save
         self.storage = JsonStorage(folder=folder, indent=indent)
 
         if not os.path.exists(folder):
@@ -24,6 +28,9 @@ class KanDB():
             collection_data = Collection(name=name, storage=self.storage)
             self.collections[name] = collection_data
 
+        global database
+        database = self
+
     def collection(self, name: str) -> Collection:
         '''
         Nhận về một `Collection` tương đương một file `.json`
@@ -35,4 +42,14 @@ class KanDB():
         if self.collections.get(name, None) is not None:
             return self.collections[name]
 
-        return Collection(name=name, storage=self.storage)
+        return Collection(name=name, storage=self.storage, auto_save=self.auto_save)
+
+    def run(self):
+        pass
+
+
+def db() -> KanDB:
+    global database
+    if database is None:
+        raise ValueError("Call KanDB() to initialize the database")
+    return database
