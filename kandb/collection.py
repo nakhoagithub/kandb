@@ -6,7 +6,6 @@ import os
 
 
 class Collection(object):
-
     def __init__(self, name: str = "_default", storage: JsonStorage = None, auto_save=True):
         self.name = name
         self._storage = storage

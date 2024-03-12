@@ -9,7 +9,6 @@ database = None
 
 
 class KanDB():
-
     def __init__(self, folder="./__db", indent: int = 2, auto_save=True) -> None:
         self.folder = folder
         self.indent = indent

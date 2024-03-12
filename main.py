@@ -48,8 +48,8 @@ def r3():
 
 # threading.Thread(target=r1, daemon=True).start()
 # threading.Thread(target=r2, daemon=True).start()
-# threading.Thread(target=r3, daemon=True).start()
+threading.Thread(target=r3, daemon=True).start()
 
 
-# while True:
-#     time.sleep(1)
+while True:
+    time.sleep(1)
