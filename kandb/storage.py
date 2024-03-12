@@ -8,3 +8,14 @@ class JsonStorage():
 
     def write(self):
         pass
+
+
+class BsonStorage():
+    def __init__(self, folder: str) -> None:
+        self.folder = folder
+
+    def read(self):
+        pass
+
+    def write(self):
+        pass
