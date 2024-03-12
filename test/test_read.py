@@ -19,4 +19,4 @@ def read_json_files(directory):
 
 
 # Thay thế 'path/to/your/directory' bằng đường dẫn thư mục chứa các file JSON của bạn
-read_json_files('test\db\\')
+read_json_files('test/data_test/')
