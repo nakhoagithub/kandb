@@ -449,6 +449,12 @@ class Database():
     def restore(self, path_file: str):
         extract_zip(path_file, self.folder)
 
+    def login(self, username: str, password: str):
+        pass
+
+    def auth(self, username: str, password: str):
+        pass
+
     def _create_flask(self):
         app = Flask(__name__)
         api.init_app(app)

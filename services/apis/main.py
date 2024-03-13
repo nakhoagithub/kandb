@@ -6,28 +6,6 @@ import config
 import json
 from datetime import datetime, timedelta
 
-class InitResource(Resource):
-    def post(self):
-        try:
-            json = request.json
-            username = json['username'] if "username" in json else None
-            password = json['password'] if "password" in json else None
-
-            users = db()["users"].find()
-            if len([i for i in users]) > 0:
-                return {"code": 400}, 400
-
-            user = db()["users"].find_one({"username": username})
-            if user is not None:
-                return {"code": 400}, 400
-
-            hashed = bcrypt.hashpw(bytes(password, "utf-8"), bcrypt.gensalt())
-            db()["users"].insert_one(
-                {"username": username, "password": str(hashed), "state": "master"})
-            return {"code": 200}, 200
-        except Exception as e:
-            return {"code": 500, "error": str(e)}, 500
-
 
 class LoginResource(Resource):
     def post(self):
@@ -35,13 +13,14 @@ class LoginResource(Resource):
             json_data = request.json
             username = json_data['username'] if "username" in json_data else None
             password = json_data['password'] if "password" in json_data else None
-            user = db()["users"].find_one({"username": username})
+            users = db().collection("users", folder="auths").get(
+                filter={"username": username})
 
-            if user is None:
+            if len(users) == 0:
                 return {"code": 404, "message": "Không tìm thấy người dùng"}, 401
 
             check = bcrypt.checkpw(bytes(password, "utf-8"),
-                                   eval(user['password']))
+                                   eval(users[0]['password']))
 
             if check is True:
                 session = jwt.encode(
@@ -51,7 +30,7 @@ class LoginResource(Resource):
                 expires_time = current_time + timedelta(days=7)
                 expires_str = expires_time.strftime(
                     '%a, %d %b %Y %H:%M:%S GMT')
-                new_user = json.loads(dumps(user))
+                new_user = json.loads(json.dumps(users[0]))
                 del new_user['password']
                 return {"code": 200, "user": new_user}, 200, {"Set-Cookie": "session=%s; Max-Age=604800; Path=/; Expires=%s" % (session, expires_str)}
 
