@@ -9,12 +9,21 @@ import threading
 import binascii
 import shutil
 import datetime
-import socketserver
-
+from flask import Flask
+from gevent.pywsgi import WSGIServer
+from .events import socketio
+from .routes import api
+import config
 
 lock = threading.Lock()
 
 database = None
+socket_connected = False
+
+
+def db():
+    global database
+    return database
 
 
 def dir_exists(path):
@@ -183,9 +192,10 @@ class ID():
 
 
 class Collection():
-    def __init__(self, path: str = None, indent: int = 2) -> None:
+    def __init__(self, path: str = None, indent: int = 2, name: str = None) -> None:
         self.path = path
         self.indent = indent
+        self.name = name
 
     def _get_files(self) -> list:
         if not dir_exists(self.path):
@@ -331,6 +341,9 @@ class Collection():
         new_data = {'_id': _id.__str__(), **data}
         file_path = f'{self.path}/{str(_id)}.json'
         create_json(file_path, new_data, indent=self.indent)
+        if socket_connected:
+            socketio.emit(f'onchange.{self.name}', {
+                          "type": "create", "data": new_data})
         return new_data
 
     def update(self, filter: dict = {}, data: dict = None, replace: bool = False, create: bool = False):
@@ -370,7 +383,16 @@ class Collection():
                     completed = True
 
             if completed:
-                datas_updated.append(data)
+                datas_updated.append(new_data_update)
+
+            if socket_connected:
+                _type_socket = "update"
+                if replace:
+                    _type_socket = "replace"
+                elif create:
+                    _type_socket = "create"
+                socketio.emit(f'onchange.{self.name}', {
+                              "type": _type_socket, "data": new_data_update})
 
         return datas_updated
 
@@ -382,6 +404,9 @@ class Collection():
             result = delete_file(self._path(data['_id']))
             if result:
                 datas_deleted.append(data)
+                if socket_connected:
+                    socketio.emit(f'onchange.{self.name}', {
+                                  "type": "delete", "data": data})
 
         return datas_deleted
 
@@ -390,7 +415,7 @@ class Collection():
 
 
 class Database():
-    def __init__(self, folder: str = "./__db/", indent: int = 2, hostname: str = "localhost", port = 8000) -> None:
+    def __init__(self, folder: str = "./__db/", indent: int = 2, hostname: str = config.host, port=config.port) -> None:
         self.folder = folder[:-1] if folder.endswith('/') else folder
         self.indent = indent
         self.hostname = hostname
@@ -398,14 +423,19 @@ class Database():
         self._init_folder()
         self._collection_default = Collection(indent=indent)
 
+        global database
+        database = self
+
     def _init_folder(self):
         os.makedirs(f'{self.folder}/datas/', exist_ok=True)
+        os.makedirs(f'{self.folder}/auths/', exist_ok=True)
 
-    def collection(self, name: str = "__default") -> Collection:
-        path = f'{self.folder}/datas/{name}'
+    def collection(self, name: str = "__default", folder: str = "datas") -> Collection:
+        path = f'{self.folder}/{folder}/{name}'
         os.makedirs(path, exist_ok=True)
         new_collection = copy.deepcopy(self._collection_default)
         new_collection.path = path
+        new_collection.name = name
         return new_collection
 
     def backup(self, path_to: str = "./backup"):
@@ -419,11 +449,19 @@ class Database():
     def restore(self, path_file: str):
         extract_zip(path_file, self.folder)
 
-    def run_socket(self):
-        server = socketserver.TCPServer((self.hostname, self.port), DatabaseTCPHandler)
-        server.serve_forever()
+    def _create_flask(self):
+        app = Flask(__name__)
+        api.init_app(app)
+        socketio.init_app(app)
+        return app
 
-class DatabaseTCPHandler(socketserver.BaseRequestHandler):
-    def handle(self):
-        data = self.request.recv(1024).strip()
-        print(f"Received data: {data}")
+    def _run_socket(self):
+        http_server = WSGIServer(
+            (self.hostname, self.port), self._create_flask(), log=None)
+        print("API | IP: %s | Port: %s" % (self.hostname, self.port))
+        global socket_connected
+        socket_connected = True
+        http_server.serve_forever()
+
+    def run_server(self):
+        threading.Thread(target=self._run_socket, daemon=True).start()

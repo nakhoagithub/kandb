@@ -1,1 +1,7 @@
 ujson==5.9.0
+Flask==3.0.0
+flask_socketio==5.3.6
+flask_restful==0.3.10
+gevent==24.2.1
+pyjwt==2.8.0
+bcrypt==4.1.2
