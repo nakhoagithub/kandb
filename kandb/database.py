@@ -1,54 +1,85 @@
-from typing import Dict
 import ujson
-from .collection import Collection
-from copy import deepcopy
-from .storage import JsonStorage
 import os
+import copy
+import hashlib
+import time
 
 database = None
 
 
-class KanDB():
-    def __init__(self, folder="./__db", indent: int = 2, auto_save=True) -> None:
-        self.folder = folder
+def dir_exists(path):
+    return os.path.exists(path) and os.path.isdir(path)
+
+
+def file_exists(path):
+    return os.path.isfile(path)
+
+
+def touch(path):
+    if not file_exists(path):
+        with open(path, 'w') as outfile:
+            ujson.dump({}, outfile)
+
+
+def generate_id(path):
+    while True:
+        unique_value = str(time.time()).encode('utf-8')
+        unique_hash = hashlib.md5(unique_value).hexdigest()[:8]
+
+        filename = os.path.join(path, unique_hash)
+
+        # Kiểm tra xem tên file đã tồn tại chưa
+        if not os.path.exists(filename):
+            return filename
+
+
+print(generate_id("12321"))
+
+
+class Collection():
+    def __init__(self, path: str = None, indent: int = 2) -> None:
+        self.path = path
         self.indent = indent
-        self.auto_save = auto_save
-        self.storage = JsonStorage(folder=folder, indent=indent)
 
-        if not os.path.exists(folder):
-            os.makedirs(folder)
+    def _get_files(self) -> list:
+        if not dir_exists(self.path):
+            return []
+        return sorted(os.listdir(self.path), key=lambda x: os.path.getctime(f'{self.path}/{x}'))
 
-        self.collections: Dict[str, Collection] = {}
+    def _get_file(self, path: str):
+        with open(path, mode="r", encoding='utf-8') as file:
+            json_obj = ujson.loads(file.read())
+            return json_obj
 
-        files = [file for file in os.scandir(
-            folder) if file.is_file() and file.name.endswith(".json")]
+    def get(self):
+        results = []
+        files = self._get_files()
         for file in files:
-            name = file.name[:len(file.name) - len('.json')]
-            collection_data = Collection(name=name, storage=self.storage)
-            self.collections[name] = collection_data
+            data = self._get_file(f'{self.path}/{file}')
+            results.append(data)
+        return results
 
-        global database
-        database = self
+    def insert(self, data: dict):
+        if not isinstance(data, dict):
+            raise ValueError('`data` must be of type dict!')
 
-    def collection(self, name: str) -> Collection:
-        '''
-        Nhận về một `Collection` tương đương một file `.json`
-        '''
-        if type(name) is not str:
-            raise TypeError(
-                "The 'name' parameter must be of type string (str)")
-
-        if self.collections.get(name, None) is not None:
-            return self.collections[name]
-
-        return Collection(name=name, storage=self.storage, auto_save=self.auto_save)
-
-    def run(self):
-        pass
+        print(self.path)
 
 
-def db() -> KanDB:
-    global database
-    if database is None:
-        raise ValueError("Call KanDB() to initialize the database")
-    return database
+class Database():
+    def __init__(self, folder: str = "./__db/", indent: int = 2) -> None:
+        self.folder = folder[:-1] if folder.endswith('/') else folder
+        self.indent = indent
+        self._init_folder()
+        self._collection_default = Collection(indent=indent)
+
+    def _init_folder(self):
+        os.makedirs(f'{self.folder}/indexs/', exist_ok=True)
+        os.makedirs(f'{self.folder}/datas/', exist_ok=True)
+
+    def collection(self, name: str = "__default") -> Collection:
+        path = f'{self.folder}/datas/{name}'
+        os.makedirs(path, exist_ok=True)
+        new_collection = copy.deepcopy(self._collection_default)
+        new_collection.path = path
+        return new_collection
