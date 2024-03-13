@@ -9,6 +9,10 @@ import threading
 import binascii
 import shutil
 import datetime
+import socketserver
+
+
+lock = threading.Lock()
 
 database = None
 
@@ -198,13 +202,14 @@ class Collection():
     def _read_file(self, path: str):
         with open(path, mode="r", encoding='utf-8') as file:
             json_obj = ujson.loads(file.read())
+            file.close()
             return json_obj
 
     def _update_file(self, path: str, data: dict = {}):
-        with open(path, mode="w", encoding='utf-8') as file:
-            json_obj = ujson.dumps(data, indent=self.indent)
-            file.write(json_obj)
-            return data
+        with lock:
+            with open(path, mode="w", encoding='utf-8') as file:
+                file.write(ujson.dumps(data, indent=self.indent))
+                return True
 
     def _matches_condition(self, document: dict, field: str, value: dict):
         # Hàm này kiểm tra xem một điều kiện cụ thể có khớp với tài liệu không
@@ -353,17 +358,19 @@ class Collection():
 
             path = self._path(data_local['_id'])
 
+            completed = False
             if file_exists(path):
-                self._update_file(path, data=new_data_update)
-
+                completed = self._update_file(path, data=new_data_update)
             else:
                 if create:
                     new_data_create = {**data}
                     if new_data_create.get('_id', None) is not None:
                         new_data_create.pop('_id')
                     self.insert({**new_data_create})
+                    completed = True
 
-            datas_updated.append(data)
+            if completed:
+                datas_updated.append(data)
 
         return datas_updated
 
@@ -383,9 +390,11 @@ class Collection():
 
 
 class Database():
-    def __init__(self, folder: str = "./__db/", indent: int = 2) -> None:
+    def __init__(self, folder: str = "./__db/", indent: int = 2, hostname: str = "localhost", port = 8000) -> None:
         self.folder = folder[:-1] if folder.endswith('/') else folder
         self.indent = indent
+        self.hostname = hostname
+        self.port = port
         self._init_folder()
         self._collection_default = Collection(indent=indent)
 
@@ -409,3 +418,12 @@ class Database():
 
     def restore(self, path_file: str):
         extract_zip(path_file, self.folder)
+
+    def run_socket(self):
+        server = socketserver.TCPServer((self.hostname, self.port), DatabaseTCPHandler)
+        server.serve_forever()
+
+class DatabaseTCPHandler(socketserver.BaseRequestHandler):
+    def handle(self):
+        data = self.request.recv(1024).strip()
+        print(f"Received data: {data}")

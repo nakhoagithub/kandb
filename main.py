@@ -1,7 +1,7 @@
 
 import time
 import threading
-from kandb.database import Database
+from services.database import Database
 
 database = Database()
 users = database.collection("users")
@@ -17,44 +17,45 @@ users = database.collection("users")
 # deleted = users.delete(filter={"count": {"$in": [10, 20]}})
 # print(deleted)
 
-datas = users.get()
+# datas = users.get()
 
 # for data in datas:
 #     print(data)
 
-print(len(datas))
+# print(len(datas))
+
 
 def r1():
     count = 1
     while True:
-        # a.update(filter={"_id": "65eec6deb8942d2d385f681a"},
-        #          data_update={"data": count})
-        count += 1
+        update = users.update(
+            filter={'_id': "65f15e6fc016f34918bf20c6"}, data={"int": count})
+        if len(update) > 0:
+            count += 1
         time.sleep(0.2)
 
 
 def r2():
     data1 = True
     while True:
-        # a.update(filter={"_id": "65eec6deb8942d2d385f681a"},
-        #          data_update={"data1": data1})
-        if data1:
-            data1 = False
-        else:
-            data1 = True
+        update = users.update(
+            filter={'_id': "65f15e6fc016f34918bf20c7"}, data={"bool": data1})
+        if len(update) > 0:
+            if data1:
+                data1 = False
+            else:
+                data1 = True
         time.sleep(0.2)
 
 
 def r3():
-    while True:
-        # print(a.find({'_id': "65eec6deb8942d2d385f681a"}).get())
-        time.sleep(0.2)
+    database.run_socket()
 
 
-# threading.Thread(target=r1, daemon=True).start()
-# threading.Thread(target=r2, daemon=True).start()
-# threading.Thread(target=r3, daemon=True).start()
+threading.Thread(target=r1, daemon=True).start()
+threading.Thread(target=r2, daemon=True).start()
+threading.Thread(target=r3, daemon=True).start()
 
 
-# while True:
-#     time.sleep(1)
+while True:
+    time.sleep(1)
