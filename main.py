@@ -17,15 +17,12 @@ users = database.collection("users")
 # deleted = users.delete(filter={"count": {"$in": [10, 20]}})
 # print(deleted)
 
-# datas = users.get(filter={"abc": {"$ne": None}})
+datas = users.get()
 
 # for data in datas:
 #     print(data)
 
-# print(len(datas))
-
-# database.backup()
-database.restore(path_file='D:/Khoa/kandb/backup/backup-13032024-143439.tar.gz')
+print(len(datas))
 
 def r1():
     count = 1

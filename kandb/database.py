@@ -9,11 +9,6 @@ import threading
 import binascii
 import shutil
 import datetime
-from typing import Literal
-from pathlib import Path
-import gzip
-
-BackupMode = Literal["tar", "gzip"]
 
 database = None
 
@@ -405,12 +400,12 @@ class Database():
         return new_collection
 
     def backup(self, path_to: str = "./backup"):
-        path_source = Path(self.folder)
+        path_source = self.folder
         name = f'backup-{datetime.datetime.now().strftime("%d%m%Y-%H%M%S")}'
-        path_file_backup = Path(path_to).joinpath(name)
+        path_file_backup = os.path.join(path_to, name)
         if dir_exists(path_source):
             os.makedirs(path_to, exist_ok=True)
             compress_to_zip(path_source, path_file_backup)
 
-    def restore(self, path_file: str = ""):
+    def restore(self, path_file: str):
         extract_zip(path_file, self.folder)
