@@ -1,8 +1,12 @@
 import ujson
 import os
 import copy
-import hashlib
 import time
+import struct
+import socket
+import random
+import threading
+import binascii
 
 database = None
 
@@ -21,19 +25,129 @@ def touch(path):
             ujson.dump({}, outfile)
 
 
-def generate_id(path):
-    while True:
-        unique_value = str(time.time()).encode('utf-8')
-        unique_hash = hashlib.md5(unique_value).hexdigest()[:8]
+class ID():
+    '''Use ObjectId generation algorithm in `bson`
+    Source: https://github.com/py-bson/bson
+    Re-edit by Anh Khoa
+    '''
 
-        filename = os.path.join(path, unique_hash)
+    _inc = random.randint(0, 0xFFFFFF)
+    _inc_lock = threading.Lock()
 
-        # Kiểm tra xem tên file đã tồn tại chưa
-        if not os.path.exists(filename):
-            return filename
+    def __init__(self, id=None) -> None:
+        if id is None:
+            self.__generate()
+        elif isinstance(id, bytes) and len(id) == 12:
+            self.__id = id
+        else:
+            self.__validate(id)
 
+    def _fnv_1a_24(self, data, prime=0x01000193, offset_basis=0x811C9D):
+        hash_value = offset_basis
+        for byte in data:
+            hash_value ^= byte
+            hash_value *= prime
+            hash_value &= 0xFFFFFF  # Giữ giá trị không vượt quá 24-bit
+        return hash_value
 
-print(generate_id("12321"))
+    def _machine_bytes(self):
+        return struct.pack("<I", self._fnv_1a_24(socket.gethostname().encode()))[:3]
+
+    def __generate(self):
+        # 4 bytes current time
+        oid = struct.pack(">i", int(time.time()))
+
+        # 3 bytes machine
+        oid += self._machine_bytes()
+
+        # 2 bytes pid
+        oid += struct.pack(">H", os.getpid() % 0xFFFF)
+
+        # 3 bytes inc
+        with ID._inc_lock:
+            oid += struct.pack(">i", ID._inc)[1:4]
+            ID._inc = (ID._inc + 1) % 0xFFFFFF
+
+        self.__id = oid
+
+    def binary(self):
+        return self.__id
+
+    def is_valid(oid):
+        if not oid:
+            return False
+        try:
+            ID(oid)
+            return True
+        except Exception:
+            return False
+
+    def __validate(self, oid):
+        if isinstance(oid, ID):
+            self.__id = self.binary()
+        elif isinstance(oid, str):
+            if len(oid) == 24:
+                try:
+                    self.__id = bytes.fromhex(oid)
+                except (TypeError, ValueError):
+                    raise ValueError(oid)
+            else:
+                raise ValueError(oid)
+        else:
+            raise TypeError(
+                f'id must be an instance of (bytes, {str.__name__}, ID), not {type(oid)}')
+
+    def __getstate__(self):
+        return self.__id
+
+    def __setstate__(self, value):
+        if isinstance(value, dict):
+            oid = value["_ID__id"]
+        else:
+            oid = value
+        if isinstance(oid, str):
+            self.__id = oid.encode('latin-1')
+        else:
+            self.__id = oid
+
+    def __str__(self):
+        return binascii.hexlify(self.__id).decode()
+
+    def __repr__(self):
+        return "ID('%s')" % (str(self),)
+
+    def __eq__(self, other):
+        if isinstance(other, ID):
+            return self.__id == other.binary()
+        return NotImplemented
+
+    def __ne__(self, other):
+        if isinstance(other, ID):
+            return self.__id != other.binary()
+        return NotImplemented
+
+    def __lt__(self, other):
+        if isinstance(other, ID):
+            return self.__id < other.binary()
+        return NotImplemented
+
+    def __le__(self, other):
+        if isinstance(other, ID):
+            return self.__id <= other.binary()
+        return NotImplemented
+
+    def __gt__(self, other):
+        if isinstance(other, ID):
+            return self.__id > other.binary()
+        return NotImplemented
+
+    def __ge__(self, other):
+        if isinstance(other, ID):
+            return self.__id >= other.binary()
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self.__id)
 
 
 class Collection():

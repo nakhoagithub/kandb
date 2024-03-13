@@ -1,22 +1,12 @@
 
 import time
 import threading
-from kandb import KanDB, db
+from kandb.database import Database
 
-database = KanDB()
-
-a = db().collection("users")
-
-begin = time.time()
-
-for i in range(100):
-    a.insert({"data": i}, save=False)
-a.save()
-end = time.time()
-print(end - begin)
-
-print(len(a.get()))
-
+database = Database()
+users = database.collection("users")
+users.insert({})
+print(users.get())
 
 
 def r1():
@@ -48,7 +38,7 @@ def r3():
 
 # threading.Thread(target=r1, daemon=True).start()
 # threading.Thread(target=r2, daemon=True).start()
-threading.Thread(target=r3, daemon=True).start()
+# threading.Thread(target=r3, daemon=True).start()
 
 
 # while True:
