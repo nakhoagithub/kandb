@@ -5,9 +5,27 @@ from kandb.database import Database
 
 database = Database()
 users = database.collection("users")
-users.insert({})
-print(users.get())
 
+# users.delete_all()
+
+# import random
+# for i in range(50):
+#     users.insert({"count": i, "data_random": random.randint(1, 0xFFFF)})
+
+# users.update(data={"abc": 10}, filter={"count": {"$in": [0, 1, 2, 3, 4, 5]}})
+
+# deleted = users.delete(filter={"count": {"$in": [10, 20]}})
+# print(deleted)
+
+# datas = users.get(filter={"abc": {"$ne": None}})
+
+# for data in datas:
+#     print(data)
+
+# print(len(datas))
+
+# database.backup()
+database.restore(path_file='D:/Khoa/kandb/backup/backup-13032024-143439.tar.gz')
 
 def r1():
     count = 1
