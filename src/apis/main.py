@@ -6,13 +6,14 @@ import config
 import json
 from datetime import datetime, timedelta
 
+
 class LoginResource(Resource):
     def post(self):
         try:
             json_data = request.json
             username = json_data['username'] if "username" in json_data else None
             password = json_data['password'] if "password" in json_data else None
-            users = db().collection("users", folder="auths").get(
+            users = db().collection("users", folder="base").get(
                 filter={"username": username})
 
             if len(users) == 0:

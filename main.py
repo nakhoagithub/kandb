@@ -1,12 +1,16 @@
 
 import time
 import threading
-from src import run_server
-from src import db
+# from src import run_server
+# from src import db
 
-run_server()
+from server import sv
 
-users = db.collection("users")
+# run_server()
+
+sv.run()
+
+users = sv.database.collection("users")
 
 # users.delete_all()
 
