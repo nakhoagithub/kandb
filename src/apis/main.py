@@ -6,7 +6,6 @@ import config
 import json
 from datetime import datetime, timedelta
 
-
 class LoginResource(Resource):
     def post(self):
         try:

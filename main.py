@@ -1,10 +1,12 @@
 
 import time
 import threading
-from services.database import Database
+from src import run_server
+from src import db
 
-database = Database()
-users = database.collection("users")
+run_server()
+
+users = db.collection("users")
 
 # users.delete_all()
 
@@ -35,27 +37,27 @@ def r1():
         time.sleep(3)
 
 
-def r2():
-    data1 = True
-    while True:
-        update = users.update(
-            filter={'_id': "65f15e6fc016f34918bf20c7"}, data={"bool": data1})
-        if len(update) > 0:
-            if data1:
-                data1 = False
-            else:
-                data1 = True
-        time.sleep(3)
+# def r2():
+#     data1 = True
+#     while True:
+#         update = users.update(
+#             filter={'_id': "65f15e6fc016f34918bf20c7"}, data={"bool": data1})
+#         if len(update) > 0:
+#             if data1:
+#                 data1 = False
+#             else:
+#                 data1 = True
+#         time.sleep(3)
 
 
-def r3():
-    pass
+# def r3():
+#     pass
 
 
 threading.Thread(target=r1, daemon=True).start()
-# threading.Thread(target=r2, daemon=True).start()
-# threading.Thread(target=r3, daemon=True).start()
-database.run_server()
+# # threading.Thread(target=r2, daemon=True).start()
+# # threading.Thread(target=r3, daemon=True).start()
+# database.run_server()
 
 
 while True:
