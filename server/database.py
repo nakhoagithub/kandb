@@ -54,6 +54,9 @@ def extract_zip(zip_filename: str, extract_path: str):
     shutil.unpack_archive(zip_filename, extract_path, 'gztar')
 
 
+TypeCallback = Callable[[str, dict], None]
+
+
 class ID():
     '''Use ObjectId generation algorithm in `bson`
     Source: https://github.com/py-bson/bson
@@ -180,14 +183,23 @@ class ID():
 
 
 class Collection():
-    def __init__(self, path: str = None, indent: int = 2, name: str = None, read_callback: Callable = None, create_callback: Callable = None, update_callback: Callable = None, delete_callback: Callable = None) -> None:
+    def __init__(
+        self,
+        path: str = None,
+        indent: int = 2,
+        name: str = None,
+        read_callback: TypeCallback = None,
+        create_callback: TypeCallback = None,
+        update_callback: TypeCallback = None,
+        delete_callback: TypeCallback = None
+    ) -> None:
         self.path = path
         self.indent = indent
         self.name = name
-        self._read_callback = read_callback
-        self._create_callback = create_callback
-        self._update_callback = update_callback
-        self._delete_callback = delete_callback
+        self.read_callback = read_callback
+        self.create_callback = create_callback
+        self.update_callback = update_callback
+        self.delete_callback = delete_callback
 
     def _get_files(self) -> list:
         if not dir_exists(self.path):
@@ -195,25 +207,25 @@ class Collection():
 
         return sorted(os.listdir(self.path), key=lambda x: ID(x[:-1 * len('.json')]))
 
-    def _path(self, id: str | ID):
+    def _path(self, id: str | ID) -> str:
         '''return `path` from id'''
         if isinstance(id, ID):
             return f'{self.path}/{id.__str__()}.json'
         return f'{self.path}/{id}.json'
 
-    def _read_file(self, path: str):
+    def _read_file(self, path: str) -> dict:
         with open(path, mode="r", encoding='utf-8') as file:
             json_obj = ujson.loads(file.read())
             file.close()
             return json_obj
 
-    def _update_file(self, path: str, data: dict = {}):
+    def _update_file(self, path: str, data: dict = {}) -> bool:
         with lock:
             with open(path, mode="w", encoding='utf-8') as file:
                 file.write(ujson.dumps(data, indent=self.indent))
                 return True
 
-    def _matches_condition(self, document: dict, field: str, value: dict):
+    def _matches_condition(self, document: dict, field: str, value: dict) -> bool:
         # Hàm này kiểm tra xem một điều kiện cụ thể có khớp với tài liệu không
         # if field not in document:
         #     return False
@@ -258,7 +270,7 @@ class Collection():
 
         return False
 
-    def _matches_filter(self, document: dict, filter_query: dict):
+    def _matches_filter(self, document: dict, filter_query: dict) -> bool:
         # Hàm này kiểm tra xem một tài liệu có khớp với điều kiện lọc không
         for operator, conditions in filter_query.items():
             if operator == "$and":
@@ -280,7 +292,7 @@ class Collection():
 
         return False
 
-    def _sort(self, documents: list, sort: dict):
+    def _sort(self, documents: list, sort: dict) -> list:
         if not isinstance(sort, dict):
             raise ValueError('`sort` must be of type dict!')
 
@@ -298,7 +310,7 @@ class Collection():
 
         return documents
 
-    def get(self, filter: dict = {}, sort: dict = {}, limit: int = 0, skip: int = 0, callback: bool = True):
+    def get(self, filter: dict = {}, sort: dict = {}, limit: int = 0, skip: int = 0, callback: bool = True) -> list:
         datas = []
         files = self._get_files()
         for file in files:
@@ -322,12 +334,12 @@ class Collection():
 
         results = results_sort[skip:len(results_sort)]
 
-        if self._read_callback and callback:
-            self._read_callback(name=self.name, data=results)
+        if self.read_callback and callback:
+            self.read_callback(name=self.name, data=results)
 
         return results
 
-    def count(self):
+    def count(self) -> int:
         return len(self._get_files())
 
     def insert(self, data: dict):
@@ -338,8 +350,8 @@ class Collection():
         new_data = {'_id': _id.__str__(), **data}
         file_path = f'{self.path}/{str(_id)}.json'
         create_json(file_path, new_data, indent=self.indent)
-        if self._create_callback:
-            self._create_callback(name=self.name, data={
+        if self.create_callback:
+            self.create_callback(name=self.name, data={
                 "type": "create", "data": new_data})
         return new_data
 
@@ -388,8 +400,8 @@ class Collection():
                 _type_socket = "replace"
             elif create:
                 _type_socket = "create"
-            if self._update_callback:
-                self._update_callback(name=self.name, data={
+            if self.update_callback:
+                self.update_callback(name=self.name, data={
                     "type": _type_socket, "data": new_data_update})
 
         return datas_updated
@@ -402,9 +414,9 @@ class Collection():
             result = delete_file(self._path(data['_id']))
             if result:
                 datas_deleted.append(data)
-                if self._delete_callback:
-                    self._delete_callback(name=self.name, data={
-                                          "type": "delete", "data": data})
+                if self.delete_callback:
+                    self.delete_callback(name=self.name, data={
+                        "type": "delete", "data": data})
 
         return datas_deleted
 
@@ -413,15 +425,12 @@ class Collection():
 
 
 class Database():
-    def __init__(self, folder: str = "./__db/", indent: int = 2, read_callback: Callable = None, create_callback: Callable = None, update_callback: Callable = None, delete_callback: Callable = None) -> None:
+    def __init__(self, folder: str = "./__db/", collection: Collection = Collection()) -> None:
         self.folder = folder[:-1] if folder.endswith('/') else folder
-        self.indent = indent
         self._init_folder()
-        self._collection_default = Collection(indent=indent)
-        self._read_callback = read_callback
-        self._create_callback = create_callback
-        self._update_callback = update_callback
-        self._delete_callback = delete_callback
+        self._collection = collection
+        global database
+        database = self
 
     def _init_folder(self):
         os.makedirs(f'{self.folder}/datas/', exist_ok=True)
@@ -430,13 +439,9 @@ class Database():
     def collection(self, name: str = "__default", folder: str = "datas") -> Collection:
         path = f'{self.folder}/{folder}/{name}'
         os.makedirs(path, exist_ok=True)
-        new_collection = copy.deepcopy(self._collection_default)
+        new_collection = copy.deepcopy(self._collection)
         new_collection.path = path
         new_collection.name = name
-        new_collection._read_callback = self._read_callback
-        new_collection._create_callback = self._create_callback
-        new_collection._update_callback = self._update_callback
-        new_collection._delete_callback = self._delete_callback
         return new_collection
 
     def backup(self, path_to: str = "./backup"):
@@ -449,3 +454,11 @@ class Database():
 
     def restore(self, path_file: str):
         extract_zip(path_file, self.folder)
+
+
+database: Database = None
+
+
+def db():
+    global database
+    return database
