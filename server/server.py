@@ -1,4 +1,5 @@
 from flask import Flask, request
+from flask_lt import run_with_lt
 from flask_restful import Api, Resource
 from flask_socketio import SocketIO, disconnect
 from gevent.pywsgi import WSGIServer
@@ -6,11 +7,13 @@ import threading
 import jwt
 import config
 import bcrypt
+import subprocess
 
 from .database import Database
 
 
 app = Flask(__name__)
+run_with_lt(app)
 socketio = SocketIO(async_mode="gevent")
 api = Api()
 db: Database = None
@@ -67,13 +70,29 @@ class Server():
         self.connected = True
         http_server.serve_forever()
 
+    def _run_localtunnel(self):
+        try:
+            # Thực hiện lệnh localtunnel để tạo kết nối
+            process = subprocess.Popen(
+                ["ssh", "-p", str(self.port), '443', '-R', f'80:localhost:{self.port}', 'serveo.net'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            
+            # Đọc đầu ra từ lệnh
+            for line in process.stdout:
+                print(line)
+            return None
+        except Exception as e:
+            print("Error:", e)
+            return None
+
     def run(self):
         threading.Thread(target=self._run, daemon=True).start()
+        threading.Thread(target=self._run_localtunnel, daemon=True).start()
 
 
 @socketio.on("connect")
 def handle_connect():
     try:
+        db_user = db.collection("users", folder="base")
         session = request.headers.get("Session")
         sid = request.sid
         payload = None
@@ -83,13 +102,10 @@ def handle_connect():
         except:
             pass
 
-        payload = "1"
-
         if payload is not None:
-            users = db.collection("users", folder="base").get()
-            # db()["users"].update_one({"username": payload["username"]}, {
-            #     "$set": {"sid": sid, "isOnline": True}})
-
+            # fmt: off
+            db_user.update(filter={"username": payload["username"]}, data={"sid": sid, "isOnline": True})
+            # fmt: on
             print(f'Client connected | {sid} | {payload}')
         else:
             disconnect(sid)
@@ -101,9 +117,11 @@ def handle_connect():
 @socketio.on("disconnect")
 def handle_disconnect():
     try:
+        db_user = db.collection("users", folder="base")
         sid = request.sid
-        # db()["users"].update_one({"sid": sid}, {
-        #     "$set": {"sid": None, "isOnline": False}})
+        # fmt: off
+        db_user.update(filter={"sid": sid}, data={"sid": None, "isOnline": False})
+        # fmt: on
         print("Client disconnected | %s" % (sid))
     except Exception as e:
         pass
