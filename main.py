@@ -1,15 +1,8 @@
 
 import time
-import threading
-# from src import run_server
-# from src import db
-
 from server import sv
 
-# run_server()
-
 sv.run()
-
 users = sv.database.collection("users")
 
 # users.delete_all()
@@ -58,7 +51,7 @@ def r1():
 #     pass
 
 
-threading.Thread(target=r1, daemon=True).start()
+# threading.Thread(target=r1, daemon=True).start()
 # # threading.Thread(target=r2, daemon=True).start()
 # # threading.Thread(target=r3, daemon=True).start()
 # database.run_server()
