@@ -15,7 +15,7 @@ class LoginResource(Resource):
             username = json_data['username'] if "username" in json_data else None
             password = json_data['password'] if "password" in json_data else None
             # fmt: off
-            users = db().collection("users", folder="base").get(filter={"username": username})
+            users = db().collection("users", folder="admin").get(filter={"username": username})
             # fmt: on
 
             if len(users) == 0:
@@ -57,7 +57,7 @@ class RegisterResource(Resource):
     @authenticate
     def post(self):
         try:
-            db_user = db().collection("users", folder="base")
+            db_user = db().collection("users", folder="admin")
             json = request.json
             name = json['name'] if "name" in json else None
             username = json['username'] if "username" in json else None
@@ -81,7 +81,7 @@ class UpdatePasswordResource(Resource):
     @authenticate
     def post(self):
         try:
-            db_user = db().collection("users", folder="base")
+            db_user = db().collection("users", folder="admin")
             json = request.json
             username = json['username'] if "username" in json else None
             password = json['password'] if "password" in json else None

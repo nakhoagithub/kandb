@@ -42,7 +42,7 @@ class Server():
         self._init_user_default()
 
     def _init_user_default(self):
-        user = self.database.collection("users", folder="base")
+        user = self.database.collection("users", folder="admin")
         count_user = user.count()
         if count_user == 0:
             hashed = bcrypt.hashpw(
@@ -51,6 +51,9 @@ class Server():
             master_user = {"username": self.username, "password": str(hashed), "state": "master"}
             # fmt: on
             user.insert(master_user)
+
+    def _init_port_default(self):
+        db_server = self.database.collection("port", folder="server")
 
     def create_api(resource: Resource, urls: str):
         api.add_resource(resource=resource, urls=urls)
@@ -74,7 +77,7 @@ class Server():
 @socketio.on("connect")
 def handle_connect():
     try:
-        db_user = db.collection("users", folder="base")
+        db_user = db.collection("users", folder="admin")
         session = request.headers.get("Session")
         sid = request.sid
         payload = None
@@ -99,7 +102,7 @@ def handle_connect():
 @socketio.on("disconnect")
 def handle_disconnect():
     try:
-        db_user = db.collection("users", folder="base")
+        db_user = db.collection("users", folder="admin")
         sid = request.sid
         # fmt: off
         db_user.update(filter={"sid": sid}, data={"sid": None, "isOnline": False})

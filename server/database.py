@@ -434,7 +434,7 @@ class Database():
 
     def _init_folder(self):
         os.makedirs(f'{self.folder}/datas/', exist_ok=True)
-        os.makedirs(f'{self.folder}/base/', exist_ok=True)
+        os.makedirs(f'{self.folder}/admin/', exist_ok=True)
 
     def collection(self, name: str = "__default", folder: str = "datas") -> Collection:
         path = f'{self.folder}/{folder}/{name}'
