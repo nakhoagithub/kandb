@@ -1,5 +1,4 @@
 from flask import Flask, request
-from flask_lt import run_with_lt
 from flask_restful import Api, Resource
 from flask_socketio import SocketIO, disconnect
 from gevent.pywsgi import WSGIServer
@@ -7,13 +6,11 @@ import threading
 import jwt
 import config
 import bcrypt
-import subprocess
 
 from .database import Database
 
 
 app = Flask(__name__)
-run_with_lt(app)
 socketio = SocketIO(async_mode="gevent")
 api = Api()
 db: Database = None
@@ -70,23 +67,8 @@ class Server():
         self.connected = True
         http_server.serve_forever()
 
-    def _run_localtunnel(self):
-        try:
-            # Thực hiện lệnh localtunnel để tạo kết nối
-            process = subprocess.Popen(
-                ["ssh", "-p", str(self.port), '443', '-R', f'80:localhost:{self.port}', 'serveo.net'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            
-            # Đọc đầu ra từ lệnh
-            for line in process.stdout:
-                print(line)
-            return None
-        except Exception as e:
-            print("Error:", e)
-            return None
-
     def run(self):
         threading.Thread(target=self._run, daemon=True).start()
-        threading.Thread(target=self._run_localtunnel, daemon=True).start()
 
 
 @socketio.on("connect")
