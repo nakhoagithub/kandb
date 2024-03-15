@@ -20,8 +20,8 @@ class Server():
     def __init__(
         self,
         database: Database,
-        host="0.0.0.0",
-        port=3000,
+        host=config.host,
+        port=config.port,
         prefix_api='/api',
         username_default=config.username_default,
         password_default=config.password_default
@@ -40,6 +40,7 @@ class Server():
         self.request = request
         self.disconnect = disconnect
         self._init_user_default()
+        self._init_server_info()
 
     def _init_user_default(self):
         user = self.database.collection("users", folder="admin")
@@ -52,8 +53,17 @@ class Server():
             # fmt: on
             user.insert(master_user)
 
-    def _init_port_default(self):
-        db_server = self.database.collection("port", folder="server")
+    def _init_server_info(self):
+        db_server = self.database.collection("server", folder="admin")
+        datas = db_server.get()
+        if len(datas) == 0:
+            db_server.insert({
+                'host': self.host,
+                'port': self.port
+            })
+        else:
+            self.host = datas[0]['host'] if 'host' in datas[0] else config.host
+            self.port = datas[0]['port'] if 'port' in datas[0] else config.port
 
     def create_api(resource: Resource, urls: str):
         api.add_resource(resource=resource, urls=urls)
