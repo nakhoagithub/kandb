@@ -9,7 +9,7 @@ sv = Server(database=db)
 init_api(sv)
 
 
-def callback(type_callback: str, name: str, data: dict):
+def callback(path: str, type_callback: str, name: str, data: dict):
     if sv.connected:
         sv.socket.emit(f"{type_callback}.{name}", data)
 

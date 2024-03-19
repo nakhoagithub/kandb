@@ -80,7 +80,7 @@ class Server():
     def _run(self):
         http_server = WSGIServer(
             (self.host, self.port), self._create_flask(), log=None)
-        print(f"API | IP: {self.host} | Port: {self.port}")
+        print(f"Running on IP: {self.host} | Port: {self.port}")
         self.connected = True
         http_server.serve_forever()
 
