@@ -4,7 +4,7 @@ from .server import Server
 from .api import init_api
 from .event import *
 
-db = Database()
+db = Database(collection_types=config.collection_types)
 sv = Server(database=db)
 init_api(sv)
 
@@ -12,19 +12,15 @@ init_api(sv)
 def create_callback(name: str, data: dict):
     if sv.connected:
         sv.socket.emit(f"create.{name}", data)
-        print("cai gi v troi")
-
 
 def update_callback(name: str, data: dict):
     if sv.connected:
         sv.socket.emit(f"update.{name}", data)
-        print("cai gi v troi")
 
 
 def delete_callback(name: str, data: dict):
     if sv.connected:
         sv.socket.emit(f"delete.{name}", data)
-        print("cai gi v troi")
 
 
 sv.database._collection.create_callback = create_callback

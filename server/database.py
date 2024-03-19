@@ -368,12 +368,8 @@ class Collection():
             new_data_create = {**data}
             if new_data_create.get("_id", None) is not None:
                 new_data_create.pop("_id")
-            self.insert({**new_data_create})
-            datas_update.append(new_data_create)
-            if self.create_callback:
-                # fmt: off
-                self.create_callback(name=self.name, data={"type": "create", "data": new_data_create})
-                # fmt: on
+            result = self.insert({**new_data_create})
+            datas_updated.append(result)
         else:
             for data_local in datas_update:
                 if "_id" not in data_local:
@@ -430,18 +426,21 @@ class Collection():
 
 
 class Database():
-    def __init__(self, folder: str = "./__db/", collection: Collection = Collection()) -> None:
+    def __init__(self, folder: str = "./__db/", collection: Collection = Collection(), collection_types: dict = {}) -> None:
         self.folder = folder[:-1] if folder.endswith("/") else folder
         self._init_folder()
         self._collection = collection
         global database
         database = self
+        self.collection_types = collection_types
 
     def _init_folder(self):
         os.makedirs(f"{self.folder}/datas/", exist_ok=True)
-        os.makedirs(f"{self.folder}/admin/", exist_ok=True)
 
     def collection(self, name: str = "__default", folder: str = "datas") -> Collection:
+        if self.collection_types.get(name, None) is None:
+            raise ValueError(f"'{name}' is not in 'collection_types', please configure 'collection_types'")
+
         path = f"{self.folder}/{folder}/{name}"
         os.makedirs(path, exist_ok=True)
         new_collection = copy.deepcopy(self._collection)

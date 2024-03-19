@@ -47,7 +47,7 @@ class Server():
         self._init_server_info()
 
     def _init_user_default(self):
-        user = self.database.collection("users", folder="admin")
+        user = self.database.collection("users")
         count_user = user.count()
         if count_user == 0:
             hashed = bcrypt.hashpw(
@@ -58,7 +58,7 @@ class Server():
             user.insert(master_user)
 
     def _init_server_info(self):
-        db_server = self.database.collection("server", folder="admin")
+        db_server = self.database.collection("server")
         datas = db_server.get()
         if len(datas) == 0:
             db_server.insert({

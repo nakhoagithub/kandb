@@ -34,13 +34,57 @@ class CollectionResource(Resource):
             for data in datas:
                 if not isinstance(data, dict):
                     return {"code": 400, "message": "Item in 'datas' must be dict"}, 400
-                
-                print("vo day 1 cai nhe")
+
                 result = database().collection(collection).insert(data=data)
                 datas_result.append(result)
 
             return {"code": 200, "datas": datas_result}, 200
 
+        except Exception as e:
+            return {"code": 500, "error": str(e)}, 500
+
+    @authenticate
+    def patch(self, collection):
+        try:
+            json_data: dict = request.get_json(force=True)
+            data_json = json_data.get("data", {})
+            filter_json = json_data.get("filter", {})
+            is_create = json_data.get("create", False)
+            # fmt: off
+            result = database().collection(collection).update(filter=filter_json, data=data_json, create=is_create)
+            # fmt: on
+
+            return {"code": 200, "datas": result}, 200
+
+        except Exception as e:
+            return {"code": 500, "error": str(e)}, 500
+
+    @authenticate
+    def put(self, collection):
+        try:
+            json_data: dict = request.get_json(force=True)
+            data_json = json_data.get("data", {})
+            filter_json = json_data.get("filter", {})
+            is_create = json_data.get("create", False)
+            # fmt: off
+            result = database().collection(collection).update(filter=filter_json, data=data_json, replace=True, create=is_create)
+            # fmt: on
+
+            return {"code": 200, "datas": result}, 200
+
+        except Exception as e:
+            return {"code": 500, "error": str(e)}, 500
+
+    @authenticate
+    def delete(self, collection):
+        try:
+            json_data: dict = request.get_json(force=True)
+            filter_json = json_data.get("filter", {})
+            # fmt: off
+            result = database().collection(collection).delete(filter=filter_json)
+            # fmt: on
+
+            return {"code": 200, "datas": result}, 200
         except Exception as e:
             print(e)
             return {"code": 500, "error": str(e)}, 500

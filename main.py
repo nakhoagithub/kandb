@@ -5,7 +5,7 @@ import datetime
 import threading
 
 sv.run()
-db_server = sv.database.collection("server", folder="admin")
+db_server = sv.database.collection("server")
 
 def r1():
     sv_data = db_server.get()

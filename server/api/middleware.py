@@ -37,7 +37,7 @@ def authenticate(func):
         
         if payload is not None:
             # fmt: off
-            users = database().collection("users", folder="admin").get(filter={"username": payload["username"]})
+            users = database().collection("users").get(filter={"username": payload["username"]})
             # fmt: on
 
             if len(users) == 0:

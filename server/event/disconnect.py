@@ -5,7 +5,7 @@ from ..server import database, socketio, request
 @socketio.on("disconnect")
 def handle_disconnect():
     try:
-        db_user = database().collection("users", folder="admin")
+        db_user = database().collection("users")
         sid = request.sid
 
         # fmt: off
@@ -13,6 +13,6 @@ def handle_disconnect():
         # fmt: on
 
         print("Client disconnected | %s" % (sid))
-        
+
     except Exception as e:
         pass

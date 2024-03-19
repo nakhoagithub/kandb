@@ -7,7 +7,7 @@ import jwt
 @socketio.on("connect")
 def handle_connect():
     try:
-        db_user = database().collection("users", folder="admin")
+        db_user = database().collection("users")
         session = request.headers.get("Session")
         sid = request.sid
         payload = None
