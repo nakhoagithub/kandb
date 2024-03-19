@@ -1,9 +1,8 @@
 from flask import Flask, request
 from flask_restful import Api, Resource
-from flask_socketio import SocketIO, disconnect
+from flask_socketio import SocketIO, disconnect, emit
 from gevent.pywsgi import WSGIServer
 import threading
-import jwt
 import config
 import bcrypt
 
@@ -16,13 +15,18 @@ api = Api()
 db: Database = None
 
 
+def database():
+    global db
+    return db
+
+
 class Server():
     def __init__(
         self,
         database: Database,
         host=config.host,
         port=config.port,
-        prefix_api='/api',
+        prefix_api="/api",
         username_default=config.username_default,
         password_default=config.password_default
     ) -> None:
@@ -58,12 +62,12 @@ class Server():
         datas = db_server.get()
         if len(datas) == 0:
             db_server.insert({
-                'host': self.host,
-                'port': self.port
+                "host": self.host,
+                "port": self.port
             })
         else:
-            self.host = datas[0]['host'] if 'host' in datas[0] else config.host
-            self.port = datas[0]['port'] if 'port' in datas[0] else config.port
+            self.host = datas[0]["host"] if "host" in datas[0] else config.host
+            self.port = datas[0]["port"] if "port" in datas[0] else config.port
 
     def create_api(resource: Resource, urls: str):
         api.add_resource(resource=resource, urls=urls)
@@ -76,60 +80,9 @@ class Server():
     def _run(self):
         http_server = WSGIServer(
             (self.host, self.port), self._create_flask(), log=None)
-        print(f'API | IP: {self.host} | Port: {self.port}')
+        print(f"API | IP: {self.host} | Port: {self.port}")
         self.connected = True
         http_server.serve_forever()
 
     def run(self):
         threading.Thread(target=self._run, daemon=True).start()
-
-
-@socketio.on("connect")
-def handle_connect():
-    try:
-        db_user = db.collection("users", folder="admin")
-        session = request.headers.get("Session")
-        sid = request.sid
-        payload = None
-        try:
-            payload = jwt.decode(
-                session, config.jwt_secret, algorithms=["HS256"])
-        except:
-            pass
-
-        if payload is not None:
-            # fmt: off
-            db_user.update(filter={"username": payload["username"]}, data={"sid": sid, "isOnline": True})
-            # fmt: on
-            print(f'Client connected | {sid} | {payload}')
-        else:
-            disconnect(sid)
-
-    except Exception as e:
-        disconnect(sid)
-
-
-@socketio.on("disconnect")
-def handle_disconnect():
-    try:
-        db_user = db.collection("users", folder="admin")
-        sid = request.sid
-        # fmt: off
-        db_user.update(filter={"sid": sid}, data={"sid": None, "isOnline": False})
-        # fmt: on
-        print("Client disconnected | %s" % (sid))
-    except Exception as e:
-        pass
-
-
-@socketio.on("control")
-def handle_device(data):
-    try:
-        sid = request.sid
-        id = data["id"] if "id" in data else None
-        control = data["control"] if "control" in data else None
-        if control is not None:
-            # control_device(id=id, control=control, access_auto=False, sid=sid)
-            pass
-    except Exception as e:
-        pass

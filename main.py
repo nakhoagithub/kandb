@@ -9,7 +9,7 @@ sv.run()
 #     count = 1
 #     while True:
 #         update = users.update(
-#             filter={'_id': "65f15e6fc016f34918bf20c6"}, data={"int": count})
+#             filter={"_id": "65f15e6fc016f34918bf20c6"}, data={"int": count})
 #         if len(update) > 0:
 #             count += 1
 #         time.sleep(3)
@@ -19,7 +19,7 @@ sv.run()
 #     data1 = True
 #     while True:
 #         update = users.update(
-#             filter={'_id': "65f15e6fc016f34918bf20c7"}, data={"bool": data1})
+#             filter={"_id": "65f15e6fc016f34918bf20c7"}, data={"bool": data1})
 #         if len(update) > 0:
 #             if data1:
 #                 data1 = False

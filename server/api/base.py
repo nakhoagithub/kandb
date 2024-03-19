@@ -12,8 +12,8 @@ class LoginResource(Resource):
     def post(self):
         try:
             json_data = request.json
-            username = json_data['username'] if "username" in json_data else None
-            password = json_data['password'] if "password" in json_data else None
+            username = json_data["username"] if "username" in json_data else None
+            password = json_data["password"] if "password" in json_data else None
             # fmt: off
             users = db().collection("users", folder="admin").get(filter={"username": username})
             # fmt: on
@@ -22,7 +22,7 @@ class LoginResource(Resource):
                 return {"code": 401, "message": "Không tìm thấy người dùng"}, 401
 
             # fmt: off
-            check = bcrypt.checkpw(bytes(password, "utf-8"), eval(users[0]['password']))
+            check = bcrypt.checkpw(bytes(password, "utf-8"), eval(users[0]["password"]))
             # fmt: on
 
             if check is True:
@@ -32,9 +32,9 @@ class LoginResource(Resource):
                 current_time = datetime.now()
                 expires_time = current_time + timedelta(days=7)
                 expires_str = expires_time.strftime(
-                    '%a, %d %b %Y %H:%M:%S GMT')
+                    "%a, %d %b %Y %H:%M:%S GMT")
                 new_user = json.loads(json.dumps(users[0]))
-                del new_user['password']
+                del new_user["password"]
                 return {"code": 200, "user": new_user}, 200, {"Set-Cookie": "session=%s; Max-Age=604800; Path=/; Expires=%s" % (session, expires_str)}
 
             return {"code": 401}, 401
@@ -59,9 +59,9 @@ class RegisterResource(Resource):
         try:
             db_user = db().collection("users", folder="admin")
             json = request.json
-            name = json['name'] if "name" in json else None
-            username = json['username'] if "username" in json else None
-            password = json['password'] if "password" in json else None
+            name = json["name"] if "name" in json else None
+            username = json["username"] if "username" in json else None
+            password = json["password"] if "password" in json else None
             users = db_user.get(
                 filter={"username": username})
 
@@ -83,8 +83,8 @@ class UpdatePasswordResource(Resource):
         try:
             db_user = db().collection("users", folder="admin")
             json = request.json
-            username = json['username'] if "username" in json else None
-            password = json['password'] if "password" in json else None
+            username = json["username"] if "username" in json else None
+            password = json["password"] if "password" in json else None
 
             hashed = bcrypt.hashpw(bytes(password, "utf-8"), bcrypt.gensalt())
             # fmt: off

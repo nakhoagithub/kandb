@@ -24,11 +24,11 @@ def file_exists(path):
 
 def create_json(path: str, data: dict = None, indent: int = 0):
     new_path = path
-    if not path.endswith('.json'):
-        new_path += '.json'
+    if not path.endswith(".json"):
+        new_path += ".json"
 
     if not file_exists(new_path):
-        with open(new_path, 'w') as outfile:
+        with open(new_path, "w") as outfile:
             ujson.dump(data if data is not None else {},
                        outfile, indent=indent)
 
@@ -43,25 +43,25 @@ def delete_file(path: str):
 
 def delete_all_file(path: str):
     for file in os.listdir(path):
-        delete_file(f'{path}/{file}')
+        delete_file(f"{path}/{file}")
 
 
 def compress_to_zip(folder_path: str, zip_filename: str):
-    shutil.make_archive(zip_filename, 'gztar', folder_path)
+    shutil.make_archive(zip_filename, "gztar", folder_path)
 
 
 def extract_zip(zip_filename: str, extract_path: str):
-    shutil.unpack_archive(zip_filename, extract_path, 'gztar')
+    shutil.unpack_archive(zip_filename, extract_path, "gztar")
 
 
 TypeCallback = Callable[[str, str, dict], None]
 
 
 class ID():
-    '''Use ObjectId generation algorithm in `bson`
+    """Use ObjectId generation algorithm in `bson`
     Source: https://github.com/py-bson/bson
     Re-edit by Anh Khoa
-    '''
+    """
 
     _inc = random.randint(0, 0xFFFFFF)
     _inc_lock = threading.Lock()
@@ -127,7 +127,7 @@ class ID():
                 raise ValueError(oid)
         else:
             raise TypeError(
-                f'id must be an instance of (bytes, {str.__name__}, ID), not {type(oid)}')
+                f"id must be an instance of (bytes, {str.__name__}, ID), not {type(oid)}")
 
     def __getstate__(self):
         return self.__id
@@ -138,7 +138,7 @@ class ID():
         else:
             oid = value
         if isinstance(oid, str):
-            self.__id = oid.encode('latin-1')
+            self.__id = oid.encode("latin-1")
         else:
             self.__id = oid
 
@@ -146,7 +146,7 @@ class ID():
         return binascii.hexlify(self.__id).decode()
 
     def __repr__(self):
-        return "ID('%s')" % (str(self),)
+        return f"ID({str(self)})"
 
     def __eq__(self, other):
         if isinstance(other, ID):
@@ -199,23 +199,23 @@ class Collection():
         if not dir_exists(self.path):
             return []
 
-        return sorted(os.listdir(self.path), key=lambda x: ID(x[:-1 * len('.json')]))
+        return sorted(os.listdir(self.path), key=lambda x: ID(x[:-1 * len(".json")]))
 
     def _path(self, id: str | ID) -> str:
-        '''return `path` from id'''
+        """return `path` from id"""
         if isinstance(id, ID):
-            return f'{self.path}/{id.__str__()}.json'
-        return f'{self.path}/{id}.json'
+            return f"{self.path}/{id.__str__()}.json"
+        return f"{self.path}/{id}.json"
 
     def _read_file(self, path: str) -> dict:
-        with open(path, mode="r", encoding='utf-8') as file:
+        with open(path, mode="r", encoding="utf-8") as file:
             json_obj = ujson.loads(file.read())
             file.close()
             return json_obj
 
     def _update_file(self, path: str, data: dict = {}) -> bool:
         with lock:
-            with open(path, mode="w", encoding='utf-8') as file:
+            with open(path, mode="w", encoding="utf-8") as file:
                 file.write(ujson.dumps(data, indent=self.indent))
                 return True
 
@@ -288,7 +288,7 @@ class Collection():
 
     def _sort(self, documents: list, sort: dict) -> list:
         if not isinstance(sort, dict):
-            raise ValueError('`sort` must be of type dict!')
+            raise ValueError("`sort` must be of type dict!")
 
         if len(sort.items()) == 0:
             return documents
@@ -308,7 +308,7 @@ class Collection():
         datas = []
         files = self._get_files()
         for file in files:
-            data = self._read_file(f'{self.path}/{file}')
+            data = self._read_file(f"{self.path}/{file}")
 
             if len(filter.items()) > 0:
                 if self._matches_filter(data, filter):
@@ -320,16 +320,16 @@ class Collection():
 
         if not isinstance(limit, int):
             raise TypeError(
-                f'limit must be of type int and not {type(limit)}')
+                f"limit must be of type int and not {type(limit)}")
 
         if not isinstance(skip, int):
             raise TypeError(
-                f'skip must be of type int and not {type(skip)}')
+                f"skip must be of type int and not {type(skip)}")
 
         results = results_sort[skip:len(results_sort)]
 
         if self.callback and callback:
-            self.callback(type_callback='read', name=self.name, data=results)
+            self.callback(type_callback="read", name=self.name, data=results)
 
         return results
 
@@ -338,41 +338,41 @@ class Collection():
 
     def insert(self, data: dict):
         if not isinstance(data, dict):
-            raise ValueError('`data` must be of type dict!')
+            raise ValueError("`data` must be of type dict!")
 
         _id = ID()
-        new_data = {'_id': _id.__str__(), **data}
-        file_path = f'{self.path}/{str(_id)}.json'
+        new_data = {"_id": _id.__str__(), **data}
+        file_path = f"{self.path}/{str(_id)}.json"
         create_json(file_path, new_data, indent=self.indent)
         if self.callback:
-            self.callback(type_callback='create', name=self.name, data={
+            self.callback(type_callback="create", name=self.name, data={
                 "type": "create", "data": new_data})
         return new_data
 
     def update(self, filter: dict = {}, data: dict = None, replace: bool = False, create: bool = False):
-        '''
+        """
         `create = True` create file if not exists
         `replace = True` replace data file
-        '''
+        """
         if not isinstance(data, dict):
-            raise ValueError('`data` must be of type dict!')
+            raise ValueError("`data` must be of type dict!")
 
         datas_update = self.get(filter=filter, callback=False)
 
         datas_updated = []
 
         for data_local in datas_update:
-            if '_id' not in data_local:
+            if "_id" not in data_local:
                 continue
 
-            new_data_update = {'_id': data_local['_id']}
+            new_data_update = {"_id": data_local["_id"]}
 
             if not replace:
                 new_data_update = {**new_data_update, **data_local}
 
             new_data_update = {**new_data_update, **data}
 
-            path = self._path(data_local['_id'])
+            path = self._path(data_local["_id"])
 
             completed = False
             if file_exists(path):
@@ -380,8 +380,8 @@ class Collection():
             else:
                 if create:
                     new_data_create = {**data}
-                    if new_data_create.get('_id', None) is not None:
-                        new_data_create.pop('_id')
+                    if new_data_create.get("_id", None) is not None:
+                        new_data_create.pop("_id")
                     self.insert({**new_data_create})
                     completed = True
 
@@ -405,11 +405,11 @@ class Collection():
 
         datas_deleted = []
         for data in datas_delete:
-            result = delete_file(self._path(data['_id']))
+            result = delete_file(self._path(data["_id"]))
             if result:
                 datas_deleted.append(data)
                 if self.callback:
-                    self.callback(type_callback='delete', name=self.name, data={
+                    self.callback(type_callback="delete", name=self.name, data={
                         "type": "delete", "data": data})
 
         return datas_deleted
@@ -420,18 +420,18 @@ class Collection():
 
 class Database():
     def __init__(self, folder: str = "./__db/", collection: Collection = Collection()) -> None:
-        self.folder = folder[:-1] if folder.endswith('/') else folder
+        self.folder = folder[:-1] if folder.endswith("/") else folder
         self._init_folder()
         self._collection = collection
         global database
         database = self
 
     def _init_folder(self):
-        os.makedirs(f'{self.folder}/datas/', exist_ok=True)
-        os.makedirs(f'{self.folder}/admin/', exist_ok=True)
+        os.makedirs(f"{self.folder}/datas/", exist_ok=True)
+        os.makedirs(f"{self.folder}/admin/", exist_ok=True)
 
     def collection(self, name: str = "__default", folder: str = "datas") -> Collection:
-        path = f'{self.folder}/{folder}/{name}'
+        path = f"{self.folder}/{folder}/{name}"
         os.makedirs(path, exist_ok=True)
         new_collection = copy.deepcopy(self._collection)
         new_collection.path = path
@@ -440,7 +440,7 @@ class Database():
 
     def backup(self, path_to: str = "./backup"):
         path_source = self.folder
-        name = f'backup-{datetime.datetime.now().strftime("%d%m%Y-%H%M%S")}'
+        name = f"backup-{datetime.datetime.now().strftime("%d%m%Y-%H%M%S")}"
         path_file_backup = os.path.join(path_to, name)
         if dir_exists(path_source):
             os.makedirs(path_to, exist_ok=True)

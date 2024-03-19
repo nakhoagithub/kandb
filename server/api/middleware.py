@@ -17,8 +17,8 @@ from ..database import db
 #         pass
 
 #     if payload is not None:
-#         user = db()['users'].find_one(
-#             {"username": payload['username']})
+#         user = db()["users"].find_one(
+#             {"username": payload["username"]})
 #         if user is not None:
 #             return True, json.loads(dumps(user))
 
@@ -38,14 +38,14 @@ def authenticate(func):
 
         if payload is not None:
             # fmt: off
-            users = db().collection("users", folder="admin").get(filter={"username": payload['username']})
+            users = db().collection("users", folder="admin").get(filter={"username": payload["username"]})
             # fmt: on
 
             if len(users) == 0:
                 abort(401, message="Unauthorized")
             else:
                 user_data = ujson.loads(ujson.dumps(users[0]))
-                del user_data['password']
+                del user_data["password"]
                 self.user = user_data
 
         return func(self, *args, **kwargs)
@@ -57,7 +57,7 @@ def access_collection(func):
     def wrapper(self, *args, **kwargs):
 
         # check collection
-        coll = kwargs['coll']
+        coll = kwargs["coll"]
 
         # check access
         access = True
@@ -75,7 +75,7 @@ def access_collection_user(func):
         access = True
 
         # check collection
-        coll = kwargs['coll']
+        coll = kwargs["coll"]
         method = request.method
         if coll == "users":
             if method == "DELETE":
@@ -90,11 +90,11 @@ def access_collection_user(func):
 
                 for data in datas:
                     if key_delete == "_id":
-                        data['_id'] = ujson.loads(ujson.dumps(data['_id']))
+                        data["_id"] = ujson.loads(ujson.dumps(data["_id"]))
                     user = db()[coll].find_one(
                         {key_delete: data[key_delete]})
 
-                    if user is not None and user['username'] == "admin":
+                    if user is not None and user["username"] == "admin":
                         access = False
 
         if not access:
@@ -109,8 +109,8 @@ def collection_exists(func):
     def wrapper(self, *args, **kwargs):
 
         # check collection
-        coll = kwargs['coll']
-        colls = [i['name'] for i in db().list_collections()]
+        coll = kwargs["coll"]
+        colls = [i["name"] for i in db().list_collections()]
         if coll not in colls:
             abort(404, message="Not Found")
 
