@@ -50,5 +50,4 @@ def update(data):
         return emit("update", {"code": 200, "data": result})
 
     except Exception as e:
-        print(e)
         return emit("update", {"code": 500, "error": str(e)})

@@ -93,7 +93,6 @@ class UpdatePasswordResource(Resource):
             return {"code": 200}, 200
 
         except Exception as e:
-            print(e)
             return {"code": 500, "error": str(e)}, 500
 
 
