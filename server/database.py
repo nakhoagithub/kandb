@@ -188,18 +188,12 @@ class Collection():
         path: str = None,
         indent: int = 2,
         name: str = None,
-        read_callback: TypeCallback = None,
-        create_callback: TypeCallback = None,
-        update_callback: TypeCallback = None,
-        delete_callback: TypeCallback = None
+        callback: TypeCallback = None,
     ) -> None:
         self.path = path
         self.indent = indent
         self.name = name
-        self.read_callback = read_callback
-        self.create_callback = create_callback
-        self.update_callback = update_callback
-        self.delete_callback = delete_callback
+        self.callback = callback
 
     def _get_files(self) -> list:
         if not dir_exists(self.path):
@@ -334,8 +328,8 @@ class Collection():
 
         results = results_sort[skip:len(results_sort)]
 
-        if self.read_callback and callback:
-            self.read_callback(name=self.name, data=results)
+        if self.callback and callback:
+            self.callback(type_callback='read', name=self.name, data=results)
 
         return results
 
@@ -350,8 +344,8 @@ class Collection():
         new_data = {'_id': _id.__str__(), **data}
         file_path = f'{self.path}/{str(_id)}.json'
         create_json(file_path, new_data, indent=self.indent)
-        if self.create_callback:
-            self.create_callback(name=self.name, data={
+        if self.callback:
+            self.callback(type_callback='create', name=self.name, data={
                 "type": "create", "data": new_data})
         return new_data
 
@@ -400,8 +394,8 @@ class Collection():
                 _type_socket = "replace"
             elif create:
                 _type_socket = "create"
-            if self.update_callback:
-                self.update_callback(name=self.name, data={
+            if self.callback:
+                self.callback(type_callback=_type_socket, name=self.name, data={
                     "type": _type_socket, "data": new_data_update})
 
         return datas_updated
@@ -414,8 +408,8 @@ class Collection():
             result = delete_file(self._path(data['_id']))
             if result:
                 datas_deleted.append(data)
-                if self.delete_callback:
-                    self.delete_callback(name=self.name, data={
+                if self.callback:
+                    self.callback(type_callback='delete', name=self.name, data={
                         "type": "delete", "data": data})
 
         return datas_deleted

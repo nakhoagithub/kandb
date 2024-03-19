@@ -13,7 +13,8 @@ type_data = {
             },
             'password': {
                 'required': True
-            }
+            },
+            'name': {}
         }
     },
     'datas': {

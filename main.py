@@ -3,16 +3,16 @@ import time
 from server import sv
 
 sv.run()
-users = sv.database.collection("users")
+# users = sv.database.collection("users")
 
-def r1():
-    count = 1
-    while True:
-        update = users.update(
-            filter={'_id': "65f15e6fc016f34918bf20c6"}, data={"int": count})
-        if len(update) > 0:
-            count += 1
-        time.sleep(3)
+# def r1():
+#     count = 1
+#     while True:
+#         update = users.update(
+#             filter={'_id': "65f15e6fc016f34918bf20c6"}, data={"int": count})
+#         if len(update) > 0:
+#             count += 1
+#         time.sleep(3)
 
 
 # def r2():
