@@ -191,6 +191,7 @@ class Collection():
         create_callback: TypeCallback = None,
         update_callback: TypeCallback = None,
         delete_callback: TypeCallback = None,
+        collection_types: dict = {},
     ) -> None:
         self.path = path
         self.indent = indent
@@ -198,6 +199,7 @@ class Collection():
         self.create_callback = create_callback
         self.update_callback = update_callback
         self.delete_callback = delete_callback
+        self.collection_types = collection_types
 
     def _get_files(self) -> list:
         if not dir_exists(self.path):
@@ -308,7 +310,7 @@ class Collection():
 
         return documents
 
-    def get(self, filter: dict = {}, sort: dict = {}, limit: int = 0, skip: int = 0, callback: bool = True) -> list:
+    def get(self, filter: dict = {}, sort: dict = {}, limit: int = 0, skip: int = 0) -> list:
         datas = []
         files = self._get_files()
         for file in files:
@@ -337,9 +339,29 @@ class Collection():
     def count(self) -> int:
         return len(self._get_files())
 
+    def _check_types(self, name: str, data: dict):
+        field_type: dict | None = self.collection_types.get(name, None)
+        if field_type is None:
+            # fmt: off
+            raise KeyError(f"'{name}' is not in 'collection_types', please configure 'collection_types'")
+            # fmt: on
+
+        keys = []
+        for k, v in field_type.items():
+
+            # required
+            required = isinstance(v, dict) and v.get("required", False)
+            if required and k not in data:
+                raise KeyError(f"key: '{k}' in item is required!")
+            
+            if k in data:
+                keys.append(k)
+
     def insert(self, data: dict):
         if not isinstance(data, dict):
             raise ValueError("`data` must be of type dict!")
+
+        self._check_types(self.name, data)
 
         _id = ID()
         new_data = {"_id": _id.__str__(), **data}
@@ -446,6 +468,7 @@ class Database():
         new_collection = copy.deepcopy(self._collection)
         new_collection.path = path
         new_collection.name = name
+        new_collection.collection_types = self.collection_types
         return new_collection
 
     def backup(self, path_to: str = "./backup"):

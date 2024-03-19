@@ -5,9 +5,14 @@ username_default = "admin"
 password_default = "admin"
 
 collection_types = {
-    "server": {},
+    "server": {
+        "host": {},
+        "port": {},
+    },
     "users": {},
-    "devices": {},
+    "devices": {
+        "id": {"required": True}
+    },
     "device_cates": {},
     "sensors": {},
     "sensor_cates": {},
