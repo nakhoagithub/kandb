@@ -16,7 +16,7 @@ def r1():
         time.sleep(1)
 
 
-threading.Thread(target=r1, daemon=True).start()
+# threading.Thread(target=r1, daemon=True).start()
 
 
 while True:
