@@ -9,9 +9,24 @@ sv = Server(database=db)
 init_api(sv)
 
 
-def callback(path: str, type_callback: str, name: str, data: dict):
+def create_callback(name: str, data: dict):
     if sv.connected:
-        sv.socket.emit(f"{type_callback}.{name}", data)
+        sv.socket.emit(f"create.{name}", data)
+        print("cai gi v troi")
 
 
-sv.database._collection.callback = callback
+def update_callback(name: str, data: dict):
+    if sv.connected:
+        sv.socket.emit(f"update.{name}", data)
+        print("cai gi v troi")
+
+
+def delete_callback(name: str, data: dict):
+    if sv.connected:
+        sv.socket.emit(f"delete.{name}", data)
+        print("cai gi v troi")
+
+
+sv.database._collection.create_callback = create_callback
+sv.database._collection.update_callback = update_callback
+sv.database._collection.delete_callback = delete_callback

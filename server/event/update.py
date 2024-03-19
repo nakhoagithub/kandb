@@ -1,5 +1,5 @@
-
-from ..server import socketio, emit, database
+from flask_socketio import emit
+from ..server import socketio, database
 
 
 @socketio.on("update")
@@ -41,7 +41,6 @@ def update(data):
         replace = False
         if data.get("replace", None) is not None and isinstance(data.get("replace"), bool):
             replace = data["replace"]
-
 
         # fmt: off
         result = database().collection(f"{data['collection']}").update(filter=data["filter"], data=data['data'], replace=replace, create=create)

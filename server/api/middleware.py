@@ -3,8 +3,7 @@ from flask_restful import request, wraps, abort
 import jwt
 import config
 import ujson
-
-from ..database import db
+from ..server import database
 
 
 # def auth_middleware(request: Request):
@@ -17,7 +16,7 @@ from ..database import db
 #         pass
 
 #     if payload is not None:
-#         user = db()["users"].find_one(
+#         user = database()["users"].find_one(
 #             {"username": payload["username"]})
 #         if user is not None:
 #             return True, json.loads(dumps(user))
@@ -35,18 +34,21 @@ def authenticate(func):
                 session, config.jwt_secret, algorithms=["HS256"])
         except:
             pass
-
+        
         if payload is not None:
             # fmt: off
-            users = db().collection("users", folder="admin").get(filter={"username": payload["username"]})
+            users = database().collection("users", folder="admin").get(filter={"username": payload["username"]})
             # fmt: on
 
             if len(users) == 0:
-                abort(401, message="Unauthorized")
+                abort(401, code=401, message="Unauthorized")
             else:
                 user_data = ujson.loads(ujson.dumps(users[0]))
                 del user_data["password"]
                 self.user = user_data
+
+        else:
+            abort(401, code=401, message='Unauthorized')
 
         return func(self, *args, **kwargs)
     return wrapper
@@ -91,7 +93,7 @@ def access_collection_user(func):
                 for data in datas:
                     if key_delete == "_id":
                         data["_id"] = ujson.loads(ujson.dumps(data["_id"]))
-                    user = db()[coll].find_one(
+                    user = database()[coll].find_one(
                         {key_delete: data[key_delete]})
 
                     if user is not None and user["username"] == "admin":
@@ -110,7 +112,7 @@ def collection_exists(func):
 
         # check collection
         coll = kwargs["coll"]
-        colls = [i["name"] for i in db().list_collections()]
+        colls = [i["name"] for i in database().list_collections()]
         if coll not in colls:
             abort(404, message="Not Found")
 

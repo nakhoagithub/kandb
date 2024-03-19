@@ -1,5 +1,5 @@
-
-from ..server import socketio, emit, database
+from flask_socketio import emit
+from ..server import socketio, database
 
 
 @socketio.on("delete")

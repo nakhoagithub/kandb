@@ -1,5 +1,5 @@
-
-from ..server import socketio, emit, database
+from flask_socketio import emit
+from ..server import socketio, database
 
 
 @socketio.on("create")
@@ -28,7 +28,7 @@ def create(data):
         # fmt: off
         result = database().collection(f"{data['collection']}").insert({**data['data']})
         # fmt: on
-
+        
         return emit("create", {"code": 200, "data": result})
 
     except Exception as e:

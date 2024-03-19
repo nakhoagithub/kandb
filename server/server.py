@@ -1,6 +1,6 @@
 from flask import Flask, request
 from flask_restful import Api, Resource
-from flask_socketio import SocketIO, disconnect, emit
+from flask_socketio import SocketIO, disconnect
 from gevent.pywsgi import WSGIServer
 import threading
 import config
@@ -10,7 +10,7 @@ from .database import Database
 
 
 app = Flask(__name__)
-socketio = SocketIO(async_mode="gevent")
+socketio = SocketIO(async_mode="gevent", cors_allowed_origins="*")
 api = Api()
 db: Database = None
 

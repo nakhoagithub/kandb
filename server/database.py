@@ -54,7 +54,7 @@ def extract_zip(zip_filename: str, extract_path: str):
     shutil.unpack_archive(zip_filename, extract_path, "gztar")
 
 
-TypeCallback = Callable[[str, str, str, dict], None]
+TypeCallback = Callable[[str, dict], None]
 
 
 class ID():
@@ -188,12 +188,16 @@ class Collection():
         path: str = None,
         indent: int = 2,
         name: str = None,
-        callback: TypeCallback = None,
+        create_callback: TypeCallback = None,
+        update_callback: TypeCallback = None,
+        delete_callback: TypeCallback = None,
     ) -> None:
         self.path = path
         self.indent = indent
         self.name = name
-        self.callback = callback
+        self.create_callback = create_callback
+        self.update_callback = update_callback
+        self.delete_callback = delete_callback
 
     def _get_files(self) -> list:
         if not dir_exists(self.path):
@@ -328,9 +332,6 @@ class Collection():
 
         results = results_sort[skip:len(results_sort)]
 
-        if self.callback and callback:
-            self.callback(path=self.path, type_callback="read", name=self.name, data=results)
-
         return results
 
     def count(self) -> int:
@@ -344,9 +345,9 @@ class Collection():
         new_data = {"_id": _id.__str__(), **data}
         file_path = f"{self.path}/{str(_id)}.json"
         create_json(file_path, new_data, indent=self.indent)
-        if self.callback:
+        if self.create_callback:
             # fmt: off
-            self.callback(path=self.path, type_callback="create", name=self.name, data={"type": "create", "data": new_data})
+            self.create_callback(name=self.name, data={"type": "create", "data": new_data})
             # fmt: on
         return new_data
 
@@ -369,9 +370,9 @@ class Collection():
                 new_data_create.pop("_id")
             self.insert({**new_data_create})
             datas_update.append(new_data_create)
-            if self.callback:
+            if self.create_callback:
                 # fmt: off
-                self.callback(path=self.path, type_callback="create", name=self.name, data={"type": "create", "data": new_data_create})
+                self.create_callback(name=self.name, data={"type": "create", "data": new_data_create})
                 # fmt: on
         else:
             for data_local in datas_update:
@@ -398,9 +399,9 @@ class Collection():
                 if replace:
                     _type_socket = "replace"
 
-                if self.callback:
+                if self.update_callback:
                     # fmt: off
-                    self.callback(path=self.path, type_callback=_type_socket, name=self.name, data={"type": _type_socket, "data": new_data_update})
+                    self.update_callback(name=self.name, data={"type": _type_socket, "data": new_data_update})
                     # fmt: on
 
         return datas_updated
@@ -417,9 +418,9 @@ class Collection():
             result = delete_file(self._path(data["_id"]))
             if result:
                 datas_deleted.append(data)
-                if self.callback:
+                if self.delete_callback:
                     # fmt: off
-                    self.callback(path=self.path, type_callback="delete", name=self.name, data={"type": "delete", "data": data})
+                    self.delete_callback(name=self.name, data={"type": "delete", "data": data})
                     # fmt: off
 
         return datas_deleted
