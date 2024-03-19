@@ -1,5 +1,5 @@
 
-from ..server import database, socketio, request, disconnect
+from ..server import database, socketio, request, disconnect, emit
 import config
 import jwt
 
@@ -22,8 +22,14 @@ def handle_connect():
             db_user.update(filter={"username": payload["username"]}, data={"sid": sid, "isOnline": True})
             # fmt: on
             print(f"Client connected | {sid} | {payload}")
+
+            user_data = db_user.get(filter={"username": payload["username"]})
+            new_user_data = {**user_data[0]}
+            new_user_data.pop("password")
+            emit("connect", {"code": 200, "data": new_user_data})
         else:
             disconnect(sid)
 
     except Exception as e:
+        print(e)
         disconnect(sid)
