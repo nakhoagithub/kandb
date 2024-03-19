@@ -361,49 +361,56 @@ class Collection():
 
         datas_updated = []
 
-        for data_local in datas_update:
-            if "_id" not in data_local:
-                continue
-
-            new_data_update = {"_id": data_local["_id"]}
-
-            if not replace:
-                new_data_update = {**new_data_update, **data_local}
-
-            new_data_update = {**new_data_update, **data}
-
-            path = self._path(data_local["_id"])
-
-            completed = False
-            if file_exists(path):
-                completed = self._update_file(path, data=new_data_update)
-            else:
-                if create:
-                    new_data_create = {**data}
-                    if new_data_create.get("_id", None) is not None:
-                        new_data_create.pop("_id")
-                    self.insert({**new_data_create})
-                    completed = True
-
-            if completed:
-                datas_updated.append(new_data_update)
-
-            # if socket_connected:
-            _type_socket = "update"
-            if replace:
-                _type_socket = "replace"
-            elif create:
-                _type_socket = "create"
+        # tạo nếu không có dữ liệu
+        if create and len(datas_update) == 0:
+            new_data_create = {**data}
+            if new_data_create.get("_id", None) is not None:
+                new_data_create.pop("_id")
+            self.insert({**new_data_create})
+            datas_update.append(new_data_create)
             if self.callback:
-                self.callback(type_callback=_type_socket, name=self.name, data={
-                    "type": _type_socket, "data": new_data_update})
+                # fmt: off
+                self.callback(type_callback="create", name=self.name, data={"type": "create", "data": new_data_create})
+                # fmt: on
+        else:
+            for data_local in datas_update:
+                if "_id" not in data_local:
+                    continue
+
+                new_data_update = {"_id": data_local["_id"]}
+
+                if not replace:
+                    new_data_update = {**new_data_update, **data_local}
+
+                new_data_update = {**new_data_update, **data}
+
+                path = self._path(data_local["_id"])
+
+                completed = False
+                if file_exists(path):
+                    completed = self._update_file(path, data=new_data_update)
+
+                if completed:
+                    datas_updated.append(new_data_update)
+
+                _type_socket = "update"
+                if replace:
+                    _type_socket = "replace"
+
+                if self.callback:
+                    self.callback(type_callback=_type_socket, name=self.name, data={
+                        "type": _type_socket, "data": new_data_update})
 
         return datas_updated
 
     def delete(self, filter: dict = {}):
+        datas_deleted = []
+
+        if len(filter.items()) == 0:
+            return datas_deleted
+
         datas_delete = self.get(filter=filter, callback=False)
 
-        datas_deleted = []
         for data in datas_delete:
             result = delete_file(self._path(data["_id"]))
             if result:
@@ -440,7 +447,7 @@ class Database():
 
     def backup(self, path_to: str = "./backup"):
         path_source = self.folder
-        name = f"backup-{datetime.datetime.now().strftime("%d%m%Y-%H%M%S")}"
+        name = f'backup-{datetime.datetime.now().strftime("%d%m%Y-%H%M%S")}'
         path_file_backup = os.path.join(path_to, name)
         if dir_exists(path_source):
             os.makedirs(path_to, exist_ok=True)
