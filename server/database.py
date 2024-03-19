@@ -54,7 +54,7 @@ def extract_zip(zip_filename: str, extract_path: str):
     shutil.unpack_archive(zip_filename, extract_path, 'gztar')
 
 
-TypeCallback = Callable[[str, dict], None]
+TypeCallback = Callable[[str, str, dict], None]
 
 
 class ID():
