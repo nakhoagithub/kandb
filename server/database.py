@@ -339,29 +339,9 @@ class Collection():
     def count(self) -> int:
         return len(self._get_files())
 
-    def _check_types(self, name: str, data: dict):
-        field_type: dict | None = self.collection_types.get(name, None)
-        if field_type is None:
-            # fmt: off
-            raise KeyError(f"'{name}' is not in 'collection_types', please configure 'collection_types'")
-            # fmt: on
-
-        keys = []
-        for k, v in field_type.items():
-
-            # required
-            required = isinstance(v, dict) and v.get("required", False)
-            if required and k not in data:
-                raise KeyError(f"key: '{k}' in item is required!")
-            
-            if k in data:
-                keys.append(k)
-
     def insert(self, data: dict):
         if not isinstance(data, dict):
             raise ValueError("`data` must be of type dict!")
-
-        self._check_types(self.name, data)
 
         _id = ID()
         new_data = {"_id": _id.__str__(), **data}
