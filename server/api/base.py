@@ -70,7 +70,7 @@ class RegisterResource(Resource):
 
             hashed = bcrypt.hashpw(bytes(password, "utf-8"), bcrypt.gensalt())
             db_user.insert(
-                {"name": name, "username": username, "password": str(hashed)})
+                {"name": name, "username": username, "password": str(hashed), "state": "user"})
             return {"code": 200}, 200
 
         except Exception as e:
