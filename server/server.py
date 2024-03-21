@@ -69,9 +69,6 @@ class Server():
             self.host = datas[0]["host"] if "host" in datas[0] else config.host
             self.port = datas[0]["port"] if "port" in datas[0] else config.port
 
-    def create_api(resource: Resource, urls: str):
-        api.add_resource(resource=resource, urls=urls)
-
     def _create_flask(self):
         api.init_app(app)
         socketio.init_app(app)
