@@ -35,4 +35,5 @@ def handle_connect():
             disconnect(sid)
 
     except Exception as e:
+        print(e)
         disconnect(sid)

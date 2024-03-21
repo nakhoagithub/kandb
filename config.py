@@ -8,10 +8,10 @@ collection_types = {
     "server": {},
     "users": {},
     "devices": {},
-    "deviceCates": {},
-    "deviceConditions": {},
+    "device_cates": {},
+    "device_conditions": {},
     "sensors": {},
-    "sensorCates": {},
+    "sensor_cates": {},
     "control": {},
-    "controlCates": {}
+    "control_cates": {}
 }

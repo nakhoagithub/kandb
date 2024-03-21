@@ -310,7 +310,7 @@ class Collection():
 
         return documents
 
-    def get(self, filter: dict = {}, sort: dict = {}, limit: int = 0, skip: int = 0) -> list:
+    def get(self, filter: dict = {}, sort: dict = {}, limit: int = 0, skip: int = 0, callback=False) -> list:
         datas = []
         files = self._get_files()
         for file in files:
@@ -430,14 +430,15 @@ class Collection():
 class Database():
     def __init__(self, folder: str = "./__db/", collection: Collection = Collection(), collection_types: dict = {}) -> None:
         self.folder = folder[:-1] if folder.endswith("/") else folder
+        self.collection_types = collection_types
         self._init_folder()
         self._collection = collection
         global database
         database = self
-        self.collection_types = collection_types
 
     def _init_folder(self):
-        os.makedirs(f"{self.folder}/datas/", exist_ok=True)
+        for key, value in self.collection_types.items():
+            os.makedirs(f"{self.folder}/datas/{key}", exist_ok=True)
 
     def collection(self, name: str = "__default", folder: str = "datas") -> Collection:
         if self.collection_types.get(name, None) is None:
